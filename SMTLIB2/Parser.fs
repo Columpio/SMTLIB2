@@ -490,6 +490,14 @@ and Parser (redefine : bool) as this = // redefine = whether to rename all ident
         | :? SMTLIBv2Parser.Cmd_setOptionContext -> Command (SetOption(e.option().children |> Seq.map (fun t -> t.GetText()) |> join " "))
         | :? SMTLIBv2Parser.Cmd_getInfoContext -> Command (GetInfo(e.info_flag().GetText()))
         | :? SMTLIBv2Parser.Cmd_setInfoContext -> Command (SetInfo(parseAttribute <| e.attribute()))
+        | :? SMTLIBv2Parser.Cmd_lemmaContext ->
+            let predName = e.symbol(0) |> x.ParseSymbol Old
+            env.InIsolation () {
+                let vars = e.sorted_var() |> x.ParseSortedVars
+                env.Add(vars)
+                let lemma = x.ParseTerm (e.term(0))
+                return Lemma(predName, vars, lemma)
+            }
         | :? SMTLIBv2Parser.Cmd_assertContext ->
             let expr = e.term(0)
             env.InIsolation () { return Assert(x.ParseTerm expr) }
